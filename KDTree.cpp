@@ -1,4 +1,3 @@
-#include<iostream>
 #include "KDTree.hpp"
 
 using namespace std;
@@ -79,6 +78,21 @@ void KDTree::clear_tree(Node** root){
   delete *root;
 }
 
+double KDTree::locate_min(Node* root, size_t dim, size_t qdim, size_t depth){
+  if(root == NULL)
+    return INT_MAX;
+
+  size_t new_depth = depth % dim;
+ 
+  if(new_depth == qdim)
+    return (root->left == NULL) ? root->point[qdim] : locate_min(root->left, dim, qdim, depth+1);
+  else{
+    return  min(root->point[qdim],
+	       min(locate_min(root->right, dim, qdim, depth+1),
+		   locate_min(root->left, dim, qdim, depth+1)));
+  }
+}
+
 KDTree::KDTree(size_t dim){
   this->size = 0;
   this->dim = dim;
@@ -106,6 +120,10 @@ void KDTree::print_point(double* p, size_t dim){
     if(i != dim -1 ) cout << ",";
   }
   cout  << "}" << endl;
+}
+
+double KDTree::find_min(size_t qdim, size_t depth){
+  return locate_min(this->root, this->dim, qdim, depth);
 }
 
 KDTree::~KDTree(){
