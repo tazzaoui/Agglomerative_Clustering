@@ -23,7 +23,7 @@ static Node* get_node(double* p, size_t dim){
   return temp;
 }
 
-Node* insert_node(Node* root, double* point,
+static Node* insert_node(Node* root, double* point,
 		  size_t dim, size_t depth = 0){
   // Empty Tree...
   if(root == NULL)
@@ -46,3 +46,4 @@ KDTree::KDTree(size_t dim){
   this->dim = dim;
   this->root = NULL;
 }
+
