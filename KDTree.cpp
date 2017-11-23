@@ -23,22 +23,27 @@ static Node* get_node(double* p, size_t dim){
   return temp;
 }
 
-static Node* insert_node(Node* root, double* point,
+static void insert_node(Node** root, double* point,
 		  size_t dim, size_t depth = 0){
   // Empty Tree...
-  if(root == NULL)
-    root = get_node(point, dim);
-
+  if(*root == NULL)
+    *root = get_node(point, dim);
+  
   // Spacial dimension (x,y,z.. in R^k) allignment
   size_t d = dim % depth; 
 
   // Traverse to correct position...
-  if(root->point[d] > point[d])
-    root->left = insert_node(root->left, point, d+1);
+  if((*root)->point[d] > point[d])
+    insert_node(& ((*root)->left), point, d+1);
   else
-    root->right = insert_node(root->right, point, d+1);
+    insert_node(& ((*root)->right), point, d+1);
+}
 
-  return root;
+bool is_same(Node* a, Node* b, size_t dim){
+  for(size_t i = 0; i < dim; ++i)
+    if(a->point[i] != b->point[i])
+      return false;
+  return true;
 }
 
 KDTree::KDTree(size_t dim){
@@ -46,4 +51,10 @@ KDTree::KDTree(size_t dim){
   this->dim = dim;
   this->root = NULL;
 }
+
+bool KDTree::insert(double* point, size_t depth){
+  insert_node(&(this->root), point, this->dim, depth);
+  return this->root == NULL;
+}
+
 
