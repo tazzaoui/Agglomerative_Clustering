@@ -17,13 +17,13 @@ private:
   size_t dim;
   Node* root;
   /*Helper functions for Node manipulation*/
+  static bool is_same(Node& a, Node& b, size_t dim);
   static Node* get_node(double* p, size_t dim);
-  static Node* insert_node(Node* root, double* point,
+  static void insert_node(Node** root, double* point,
 			   size_t dim, size_t depth = 0);
 public:
   KDTree(size_t dim);
   bool insert(double* point, size_t depth = 0);
-  bool same_points(double* p1, double* p2);
   Node find(double* p, size_t depth = 0);
 };
 
