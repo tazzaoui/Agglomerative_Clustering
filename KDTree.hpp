@@ -2,6 +2,8 @@
 #define KDTREE_H
 
 #include <iostream>
+#include <limits.h>
+#include <algorithm>
 
 typedef struct node Node;
 struct node{
@@ -25,11 +27,13 @@ private:
   static void output_in_order(Node*, size_t);
   static void print_point(double* p, size_t dim);
   static void clear_tree(Node** root);
+  static double locate_min(Node* root, size_t dim,size_t qdim, size_t depth = 0);
 public:
   KDTree(size_t dim);
   ~KDTree();
   bool insert(double* point, size_t depth = 0);
   bool contains(double* p, size_t depth = 0);
+  double find_min(size_t dim, size_t depth=0);
   void print(void);
 };
 
