@@ -32,12 +32,12 @@ Node* KDTree::insert_node(Node* root, double* point,
 }
 
 Node* KDTree::min_node(Node* a, Node* b, Node* c, size_t qdim){
-  Node* res = a;
-  if(b != NULL && b->point[qdim] < res->point[qdim])
-    res = b;
-  if(c != NULL && c->point[qdim] < res->point[qdim])
-    res = c;
-  return res;
+  Node* cur_min = a;
+  if(b != NULL && b->point[qdim] < cur_min->point[qdim])
+    cur_min = b;
+  if(c != NULL && c->point[qdim] < cur_min->point[qdim])
+    cur_min = c;
+  return cur_min;
 }
 
 Node* KDTree::find_min(Node* root, size_t dim, size_t qdim, size_t depth){
