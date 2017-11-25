@@ -1,31 +1,32 @@
 #include "KDTree.hpp"
 
-Node* KDTree::get_node(double* p, size_t dim){
+Node* KDTree::get_node(Cluster cluster, size_t dim){
   Node* temp = new Node;
   if(temp != NULL){
-    temp->point = new double[dim];
-    if(temp->point != NULL){
+    temp->c.point = new double[dim];
+    if(temp->c.point != NULL){
       for(size_t i = 0; i < dim; ++i)
-	temp->point[i] = p[i];
+	temp->c.point[i] = cluster.point[i];
     }else{
       delete temp; temp = NULL;
     }
+    temp->c = cluster;
     temp->right = NULL;
     temp->left = NULL;
   }
   return temp;
 }
 
-Node* KDTree::insert_node(Node* root, double* point,
+Node* KDTree::insert_node(Node* root, Cluster c,
 			  size_t dim, size_t depth){
   if(root == NULL)
-    root = get_node(point, dim);
+    root = get_node(c, dim);
   else {
     size_t new_depth = depth % dim; 
-    if(root->point[new_depth] > point[new_depth])
-      root->left = insert_node(root->left, point, dim, depth + 1);
+    if(root->c.point[new_depth] > c.point[new_depth])
+      root->left = insert_node(root->left, c, dim, depth + 1);
     else
-      root->right = insert_node(root->right, point, dim, depth + 1);
+      root->right = insert_node(root->right, c, dim, depth + 1);
   } 
 
   return root;
@@ -33,9 +34,9 @@ Node* KDTree::insert_node(Node* root, double* point,
 
 Node* KDTree::min_node(Node* a, Node* b, Node* c, size_t qdim){
   Node* cur_min = a;
-  if(b != NULL && b->point[qdim] < cur_min->point[qdim])
+  if(b != NULL && b->c.point[qdim] < cur_min->c.point[qdim])
     cur_min = b;
-  if(c != NULL && c->point[qdim] < cur_min->point[qdim])
+  if(c != NULL && c->c.point[qdim] < cur_min->c.point[qdim])
     cur_min = c;
   return cur_min;
 }
@@ -61,23 +62,31 @@ void KDTree::copy_points(double* src, double* dest, size_t dim){
      dest[i] = src[i];
 }
 
-Node* KDTree::delete_node(Node* root, double* point, size_t dim, size_t depth){
+void KDTree::copy_clusters(Cluster &src, Cluster &dest, size_t dim){
+  dest = src;
+  copy_points(src.point, dest.point, dim);
+  
+}
+
+bool KDTree::same_clusters(Cluster& a, Cluster& b, size_t dim){
+  return (a.data == b.data && same_points(a.point, b.point, dim));
+}
+
+Node* KDTree::delete_node(Node* root, Cluster c, size_t dim, size_t depth){
   if (root == NULL) return NULL;
  
   int new_depth = depth % dim;
   
-  if (same_points(root->point, point, dim)){
-
+  if (same_clusters(root->c, c, dim)){
     if (root->right != NULL){
       Node *min = find_min(root->right,dim,new_depth,0);
-      copy_points(min->point, root->point, dim);
-      root->right = delete_node(root->right, min->point, dim, depth+1);
+      copy_clusters(min->c, root->c, dim);
+      root->right = delete_node(root->right, min->c, dim, depth+1);
     }else if (root->left != NULL){
       Node *min = find_min(root->left, dim, new_depth, 0);
-      copy_points(min->point, root->point,dim);
-      root->left = delete_node(root->left, min->point, dim, depth+1);
+      copy_clusters(min->c, root->c,dim);
+      root->left = delete_node(root->left, min->c, dim, depth+1);
     }else{
-      delete [] root->point;
       delete root;
       root = NULL;
       return NULL;
@@ -85,10 +94,10 @@ Node* KDTree::delete_node(Node* root, double* point, size_t dim, size_t depth){
     return root;
   }
   
-  if (point[new_depth] < root->point[new_depth])
-    root->left = delete_node(root->left, point, dim, depth+1);
+  if (c.point[new_depth] < root->c.point[new_depth])
+    root->left = delete_node(root->left, c, dim, depth+1);
   else
-    root->right = delete_node(root->right, point, dim, depth+1);
+    root->right = delete_node(root->right, c, dim, depth+1);
   return root;
 }
 
@@ -99,26 +108,27 @@ bool KDTree::same_points(double* a, double* b, size_t dim){
   return true;
 }
 
-Node* KDTree::find_node(Node* root, double* p, size_t dim, size_t depth){
+Node* KDTree::find_node(Node* root, Cluster c, size_t dim, size_t depth){
   if(root == NULL)
     return NULL;
 
-  if(same_points(root->point, p, dim))
-    return NULL;
+  if(same_clusters(root->c, c, dim))
+    return root;
 
   size_t new_depth = depth % dim;
 
-  if(root->point[new_depth] > p[new_depth])
-    return find_node(root->left, p, dim, depth + 1);
+  if(root->c.point[new_depth] > c.point[new_depth])
+    return find_node(root->left, c, dim, depth + 1);
   else
-    return find_node(root->right, p, dim, depth + 1);
+    return find_node(root->right, c, dim, depth + 1);
 }
 
 void KDTree::output_in_order(Node* root, size_t dim){
   if(root == NULL)
     return;
   output_in_order(root->left, dim);
-  print_point(root->point, dim);
+  print_cluster(root->c, dim);
+  std::cout << std::endl;
   output_in_order(root->right, dim);
 }
 
@@ -129,7 +139,7 @@ void KDTree::clear_tree(Node* root){
   clear_tree(root->left);
   clear_tree(root->right);
 
-  delete [] root->point;
+  //  delete [] root->point;
   delete root;
 }
 
@@ -137,15 +147,30 @@ bool KDTree::contains_point(Node* root, double* point, size_t dim, size_t depth)
   if(root == NULL)
     return false;
 
-  if(same_points(root->point, point, dim)){
+  if(same_points(root->c.point, point, dim)){
     return true;
   }
   size_t new_depth = depth % dim;
 
-  if(root->point[new_depth] > point[new_depth])
+  if(root->c.point[new_depth] > point[new_depth])
     return contains_point(root->left, point, dim, depth+1);
  
   return contains_point(root->right, point, dim, depth+1);
+}
+
+bool KDTree::contains_cluster(Node* root, Cluster c, size_t dim, size_t depth ){
+  if(root == NULL)
+    return false;
+
+  if(same_clusters(root->c, c, dim))
+    return true;
+
+  size_t new_depth = depth % dim;
+  
+  if(root->c.point[new_depth] > c.point[new_depth])
+    return contains_cluster(root->left, c, dim, depth+1);
+ 
+  return contains_cluster(root->right, c, dim, depth+1);
 }
 
 KDTree::KDTree(size_t dim){
@@ -154,22 +179,22 @@ KDTree::KDTree(size_t dim){
   this->root = NULL;
 }
 
-
-bool KDTree::insert(double* point){
-  this->root = insert_node(this->root, point, this->dim);
+bool KDTree::insert(Cluster c){
+  this->root = insert_node(this->root, c, this->dim);
   if(this->root) this->num_elements++;
   return this->root == NULL;
 }
 
-bool KDTree::remove(double* point, size_t depth){
+bool KDTree::remove(Cluster c){
   if(this->num_elements <= 0)
     return false;
   else this->num_elements--;
-  this->root = delete_node(this->root, point, this->dim, depth);
+  this->root = delete_node(this->root, c, this->dim, 0);
   return true;
 }
-bool KDTree::contains(double* point){
-  return contains_point(this->root, point, this->dim);
+
+bool KDTree::contains(Cluster c){
+  return contains_cluster(this->root, c, this->dim);
 }
 
 void KDTree::print(){
@@ -182,17 +207,27 @@ void KDTree::print_point(double* p, size_t dim){
     std::cout << p[i];
     if(i != dim -1 ) std::cout << ",";
   }
-  std::cout  << "}" << std::endl;
+  std::cout  << "}";
 }
 
+void KDTree::print_cluster(Cluster c, size_t dim){
+  std::cout << "Data = {";
+  for(size_t i = 0; i < c.data.size(); ++i){
+    print_point(c.data.at(i), dim);
+    if(i != c.data.size() -1 ) std::cout << ",";
+  }
+  std::cout << "}" << std:: endl;
+  std::cout << "Centroid: ";
+  print_point(c.point, dim);
+}
 
 size_t KDTree::size()const{
   return this->num_elements;
 }
 
-double KDTree::get_min(size_t qdim, size_t depth){
-  Node* temp = find_min(this->root, this->dim, qdim, depth);
-  return temp->point[qdim];
+Cluster KDTree::get_min(size_t qdim){
+  Node* temp = find_min(this->root, this->dim, qdim, 0);
+  return temp->c;
 }
 
 KDTree::~KDTree(){
