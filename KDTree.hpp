@@ -27,6 +27,7 @@ private:
   Node* root;
   /*Helper statics for Node manipulation*/
   static bool same_points(double* a, double* b, size_t dim);
+  static bool same_data(std::vector<double*>& a, std::vector<double*>& b, size_t dim);
   static Node* get_node(Cluster cluster, size_t dim);
   static Node* insert_node(Node* root, Cluster c,
 			   size_t dim, size_t depth = 0); 
@@ -43,13 +44,18 @@ private:
   static bool contains_cluster(Node* root, Cluster c, size_t dim, size_t depth = 0); 
   static bool same_clusters(Cluster &a, Cluster& b, size_t dim);
   static void copy_clusters(Cluster &src, Cluster &dest, size_t dim);
+  static Cluster nearest(Node* root, Cluster* c, Cluster* min, size_t dim, size_t depth=0);
+  static Cluster best_match(Node* root, Cluster* c, Cluster* min, size_t dim, size_t depth=0);
+  static double euclidian_distance(double* p1, double* p2, size_t dim);
 public:
   KDTree(size_t dim);
   ~KDTree();
   bool insert(Cluster c); 
   bool remove(Cluster c); 
   bool contains(Cluster c); 
-  Cluster get_min(size_t dim); 
+  Cluster get_min(size_t dim);
+  Cluster nearest_neighbor(Cluster c);
+  Cluster find_best_match(Cluster c);
   void print(void);
   size_t size()const;
 };
