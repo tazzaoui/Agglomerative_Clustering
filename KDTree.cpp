@@ -7,10 +7,16 @@ Node* KDTree::get_node(Cluster cluster, size_t dim){
     if(temp->c.point != NULL){
       for(size_t i = 0; i < dim; ++i)
 	temp->c.point[i] = cluster.point[i];
-    }else{
-      delete temp; temp = NULL;
+      }
+      else{
+	delete temp; return NULL;
+      }
+    temp->c.data = std::vector<double*>();
+    for(size_t i = 0; i < cluster.data.size() ;++i){
+      temp->c.data.push_back(new double[dim]);
+      for(size_t j = 0; j < dim; ++j)
+	temp->c.data.at(i)[j] = cluster.data.at(i)[j];
     }
-    temp->c = cluster;
     temp->right = NULL;
     temp->left = NULL;
   }
@@ -65,7 +71,6 @@ void KDTree::copy_points(double* src, double* dest, size_t dim){
 void KDTree::copy_clusters(Cluster &src, Cluster &dest, size_t dim){
   dest = src;
   copy_points(src.point, dest.point, dim);
-  
 }
 
 bool KDTree::same_clusters(Cluster& a, Cluster& b, size_t dim){
@@ -74,7 +79,7 @@ bool KDTree::same_clusters(Cluster& a, Cluster& b, size_t dim){
 
 Node* KDTree::delete_node(Node* root, Cluster c, size_t dim, size_t depth){
   if (root == NULL) return NULL;
- 
+
   int new_depth = depth % dim;
   
   if (same_clusters(root->c, c, dim)){
@@ -85,10 +90,12 @@ Node* KDTree::delete_node(Node* root, Cluster c, size_t dim, size_t depth){
     }else if (root->left != NULL){
       Node *min = find_min(root->left, dim, new_depth, 0);
       copy_clusters(min->c, root->c,dim);
-      root->left = delete_node(root->left, min->c, dim, depth+1);
+      root->right = delete_node(root->left, min->c, dim, depth+1);
     }else{
+      for(size_t i = 0; i < c.data.size() ;++i)
+        delete[] c.data.at(i);
+      delete[] root->c.point;
       delete root;
-      root = NULL;
       return NULL;
     }
     return root;
@@ -139,7 +146,9 @@ void KDTree::clear_tree(Node* root){
   clear_tree(root->left);
   clear_tree(root->right);
 
-  //  delete [] root->point;
+  for(size_t i = 0; i < root->c.data.size(); ++i)
+    delete[] root->c.data.at(i);
+  delete[] root->c.point;
   delete root;
 }
 
