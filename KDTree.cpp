@@ -1,4 +1,5 @@
 #include "KDTree.hpp"
+#include <math.h>
 
 Node* KDTree::get_node(Cluster cluster, size_t dim){
   Node* temp = new Node;
@@ -74,7 +75,7 @@ void KDTree::copy_clusters(Cluster &src, Cluster &dest, size_t dim){
 }
 
 bool KDTree::same_clusters(Cluster& a, Cluster& b, size_t dim){
-  return (a.data == b.data && same_points(a.point, b.point, dim));
+  return (same_data(a.data, b.data, dim) && same_points(a.point, b.point, dim));
 }
 
 Node* KDTree::delete_node(Node* root, Cluster c, size_t dim, size_t depth){
@@ -112,6 +113,15 @@ bool KDTree::same_points(double* a, double* b, size_t dim){
   for(size_t i = 0; i < dim; ++i)
     if(a[i] != b[i])
       return false;
+  return true;
+}
+
+bool KDTree::same_data(std::vector<double*>& a, std::vector<double*>& b, size_t dim){
+  if(a.size() != b.size()) return false;
+  for(size_t i = 0; i < a.size(); ++i)
+    for(size_t j = 0; j < dim; ++j)
+      if(a.at(i)[j] != b.at(i)[j])
+	return false;
   return true;
 }
 
@@ -223,11 +233,82 @@ void KDTree::print_cluster(Cluster c, size_t dim){
   std::cout << "Data = {";
   for(size_t i = 0; i < c.data.size(); ++i){
     print_point(c.data.at(i), dim);
-    if(i != c.data.size() -1 ) std::cout << ",";
+    if(i != c.data.size() - 1) std::cout << ",";
   }
   std::cout << "}" << std:: endl;
   std::cout << "Centroid: ";
   print_point(c.point, dim);
+}
+
+double KDTree::euclidian_distance(double* p1, double* p2, size_t dim){
+  double sum_of_squares = 0;
+  for(size_t i = 0; i < dim; ++i)
+    sum_of_squares = pow(p2[i] - p1[i], 2);
+  return sqrt(sum_of_squares);
+}
+
+Cluster KDTree::best_match(Node* root, Cluster* c, Cluster* min, size_t dim, size_t depth){
+  if(root != NULL){
+    /* This is to avoid the trivial case of nearest neighbor */
+    if(same_clusters(root->c, *c, dim)){
+      Cluster curent_min_cluster = *min;
+      Cluster left_min_cluster = nearest(root->left, c, min, dim, depth);
+      Cluster right_min_cluster = nearest(root->right, c, min, dim, depth);
+      
+      double current_min = euclidian_distance(c->point, curent_min_cluster.point, dim);
+      double left_min = euclidian_distance(c->point, left_min_cluster.point, dim);
+      double right_min = euclidian_distance(c->point, right_min_cluster.point, dim);
+
+      double final_min = std::min(current_min, std::min(left_min, right_min));
+      if(current_min == final_min)
+	return curent_min_cluster;
+      else if(current_min == left_min)
+	return left_min_cluster;
+      else
+	return right_min_cluster;
+    }else{
+    size_t qdim = depth % dim;
+    double d = c->point[qdim] - min->point[qdim];
+    Node* near =  d <= 0 ? root->left : root->right;
+    Node* far =  d <= 0 ? root->right : root->left;
+    *min = nearest(near, c, min, dim, depth+1);
+    if(pow(d,2) < euclidian_distance(c->point, min->point, dim))
+      *min = nearest(far, c, min, dim, depth + 1);
+    if(euclidian_distance(c->point, root->c.point, dim) <
+       euclidian_distance(c->point, min->point, dim))
+      *min = root->c;
+    }
+  }
+  return *min;
+}
+Cluster KDTree::nearest(Node* root, Cluster* c,
+			Cluster* min, size_t dim, size_t depth){
+  if(root != NULL){
+    size_t qdim = depth % dim;
+    double d = c->point[qdim] - min->point[qdim];
+    Node* near =  d <= 0 ? root->left : root->right;
+    Node* far =  d <= 0 ? root->right : root->left;
+    *min = nearest(near, c, min, dim, depth+1);
+    if(pow(d,2) < euclidian_distance(c->point, min->point, dim))
+      *min = nearest(far, c, min, dim, depth + 1);
+    if(euclidian_distance(c->point, root->c.point, dim) <
+       euclidian_distance(c->point, min->point, dim))
+      *min = root->c;
+    }
+  
+  return *min;
+}
+
+Cluster KDTree::nearest_neighbor(Cluster c){
+  Cluster near;
+  Cluster a = nearest(this->root, &c, &near, this->dim, 0);
+  return a;
+}
+
+Cluster KDTree::find_best_match(Cluster c){
+  Cluster near;
+  Cluster a = best_match(this->root, &c, &near, this->dim, 0);
+  return a;
 }
 
 size_t KDTree::size()const{
