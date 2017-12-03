@@ -43,7 +43,9 @@ Cluster::Cluster(const Cluster& a){
     this->point[i] = a.point[i];
 }
 
-Cluster::Cluster(const Cluster& a, const Cluster &b){
+Cluster::Cluster(const Cluster& a, const Cluster &b, bool output){
+  if(output) cout << "Merging: cluster:" << a << "cluster: " << b << endl;
+
   this->dim = a.dim;
   this->data = new vector<double*>();
   this->point = new double[dim];
@@ -156,16 +158,28 @@ void Cluster::get_centroid(double* centroid, std::vector<double*> &v, size_t dim
     }
 }
 
-double Cluster::euclidian_distance(Cluster const& a) const{
+double Cluster::euclidian_distance(const Cluster& a) const{
+  if(this->dim != a.dim) return INT_MAX;
+  return point_euclidian_distance(this->point, a.point, this->dim);
+}
+
+double Cluster::point_euclidian_distance(double* p1, double* p2, size_t dim){
   double sum_of_squares = 0;
-  if(a.point == NULL) return INT_MAX;
+  if(p2 == NULL || p1 == NULL) return INT_MAX;
  
- for(size_t i = 0; i < this->dim; ++i){
-   double x = this->point[i] - a.point[i];
+ for(size_t i = 0; i < dim; ++i){
+   double x = p1[i] - p2[i];
    sum_of_squares += pow(x, 2);
- }
- 
+ } 
  return sqrt(sum_of_squares);
+}
+
+double Cluster::pairwise_distance(const Cluster& a) const{
+  double sum = 0;
+  for(size_t i = 0; i < this->data->size(); ++i)
+    for(size_t j = 0; j < a.get_data()->size(); ++j)
+      sum += point_euclidian_distance(this->data->at(i), a.data->at(j), this->dim); 
+  return sum /= (this->data->size() * a.data->size());
 }
 
 const vector<double*>* Cluster::get_data()const{
