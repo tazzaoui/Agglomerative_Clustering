@@ -160,6 +160,7 @@ void KDTree::print()const{
   in_order_traversal(this->root, this->dim);
 }
 
+
 Cluster KDTree::get_best_match(Node* root, const Cluster& query){
   if(root == NULL) return query;
 
@@ -213,6 +214,59 @@ Cluster KDTree::get_best_match(Node* root, const Cluster& query){
   return best_match.second->c;
 }
 
+Cluster KDTree::get_best_pairwise_match(Node* root, const Cluster& query){
+  if(root == NULL) return query;
+
+  dmin_heap pq;
+
+  pair<double, Node*> best_match(std::numeric_limits<double>::max(), root);
+
+  pq.emplace(0, root);
+  size_t depth = 0;
+  double dx, d;
+
+  while(!pq.empty()){
+    size_t qdim = depth % query.get_dim();
+    if(query == pq.top().second->c){
+      Node* left = pq.top().second->left;
+      Node* right = pq.top().second->right;
+      pq.pop();
+      if(left != NULL)
+	pq.push(make_pair(0, left));
+      if(right != NULL)
+	pq.push(make_pair(0, right));
+      if(pq.empty()) break;
+    }
+    
+    pair<double, Node*>  current = pq.top();
+    
+    if(current.first >= best_match.first)
+      return best_match.second->c;
+    
+    Node* current_node = current.second;
+    d = pow(current_node->c.pairwise_distance(query), 2);
+    dx = query.get_point()[qdim] - current_node->c.get_point()[qdim];
+    if(d < best_match.first){
+      best_match.second = current_node;
+      best_match.first  = d;
+    }
+   
+    Node* near = dx <= 0 ? current_node->left : current_node->right;
+    Node* far = dx <= 0 ? current_node->right : current_node->left;
+
+    pq.pop();
+
+    if(far != NULL)
+      pq.emplace(pow(2, dx), far);
+      
+    if(near != NULL)
+      pq.emplace(0, near);
+    
+    depth++;
+  }
+  return best_match.second->c;
+}
+
 Cluster KDTree::nearest_node(Node* root, const Cluster* c,
 			     Cluster* min, size_t dim, size_t depth){
   if(root != NULL){
@@ -237,6 +291,10 @@ Cluster KDTree::nearest_neighbor(const Cluster &c)const{
 
 Cluster KDTree::find_best_match(const Cluster &c) const{
   return get_best_match(this->root, c);
+}
+
+Cluster KDTree::pairwise_best_match(const Cluster& c)const{
+  return get_best_pairwise_match(this->root, c);
 }
 
 size_t KDTree::size()const{
