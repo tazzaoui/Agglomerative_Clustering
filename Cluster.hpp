@@ -11,11 +11,12 @@ private:
   size_t dim;
   void get_centroid(double* centroid, std::vector<double*> &v, size_t dim);
   static void print_point(double*, size_t dim);
+  static double point_euclidian_distance(double* p1, double* p2, size_t dim);
   
 public:
   Cluster(void);
   Cluster(std::vector<double*>& data, size_t dim);
-  Cluster(const Cluster&, const Cluster&);
+  Cluster(const Cluster&, const Cluster&, bool=false);
   Cluster(const Cluster&);
   
   const double* get_point(void)const;
@@ -24,7 +25,8 @@ public:
   Cluster& operator=(const Cluster& rhs);
   bool operator==(const Cluster& rhs)const;
   friend ostream& operator<<(ostream&, const Cluster&);
-  double euclidian_distance(Cluster const&) const;
+  double euclidian_distance(const Cluster&) const;
+  double pairwise_distance(const Cluster&) const;
   ~Cluster();
 };
 #endif
