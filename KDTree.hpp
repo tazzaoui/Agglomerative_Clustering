@@ -62,6 +62,9 @@ private:
   /*Return the Cluster that is nearest but not equal to the cluster in question*/
   static Cluster get_best_match(Node*, const Cluster&);
 
+  /*Return the Cluster that is nearest but not equal to the cluster in question*/
+  static Cluster get_best_pairwise_match(Node*, const Cluster&);
+
   /*Return the Cluster that is nearest (possibly equal) to the cluster in question*/
   static Cluster nearest_node(Node*, const Cluster*, Cluster*, size_t, size_t=0);
 
@@ -74,6 +77,7 @@ public:
   Cluster get_min(size_t dim)const;
   Cluster nearest_neighbor(const Cluster&)const;
   Cluster find_best_match(const Cluster &)const;
+  Cluster pairwise_best_match(const Cluster&)const;
   void print(void)const;
   size_t size(void)const;
 
