@@ -12,18 +12,26 @@ class CompareDist{public: bool operator()(pair<double, pair<Cluster, Cluster> >a
 
 int main(int argc, char* argv[]){
 /* Place vectors from stdin into one intial cluster*/
-  int unsigned numClusters;
+  int unsigned numClusters = 1;
   double input;
   vector<double> v;
   vector<double*> vp;
   vector<Cluster> clusts = vector<Cluster>(0);
   string line;
 
-  stringstream convert(argv[1]);
+  vector<string> cmdArgs = vector<string>(argv, argv + argc);
   
-  if(!(convert >> numClusters)){
-    cout << "Invalid number of clusters!";
-    exit(1);
+  for(size_t i = 0; i < cmdArgs.size(); ++i){
+    if(argc < 2 || cmdArgs[i] == "-h" || cmdArgs[i] == "--help"){
+      cout << "Usage: euclid [-h] [-c CLUSTERS]" << endl;
+      cout << "-h, --help:     show this help message and exit." << endl;
+      cout << "-c, --clusters: set the desired number of clusters." 
+	   << " Must be a number greater than 0 and less than the "
+	   << "number of initial vectors provided. Default = 1." << endl;
+      exit(0);
+    }if(cmdArgs[i] == "-c"|| cmdArgs[i] == "--clusters"){
+      if(i + 1 < cmdArgs.size()) numClusters = atoi(cmdArgs[i + 1].c_str());
+    }
   }
 
   getline(cin, line);
